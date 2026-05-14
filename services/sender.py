@@ -2,7 +2,7 @@ from html import escape
 from pathlib import Path
 
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import FSInputFile, Message
+from aiogram.types import FSInputFile, InlineKeyboardMarkup, Message
 
 from services.downloader import MediaResult
 from utils.texts import BOT_SIGNATURE
@@ -23,22 +23,35 @@ def detect_media_type(path: Path, fallback: str = "document") -> str:
     return fallback
 
 
-async def send_media_result(message: Message, result: MediaResult) -> None:
+async def send_media_result(
+    message: Message,
+    result: MediaResult,
+    reply_markup: InlineKeyboardMarkup | None = None,
+) -> None:
     caption = f"<b>{escape(result.title)}</b>\n\nManba: {escape(result.source)}\n\n{BOT_SIGNATURE}"
     input_file = FSInputFile(result.path)
     media_type = result.media_type or detect_media_type(result.path)
 
     if media_type == "photo":
-        await message.answer_photo(input_file, caption=caption)
+        try:
+            await message.answer_photo(input_file, caption=caption, reply_markup=reply_markup)
+        except TelegramAPIError:
+            await message.answer_document(input_file, caption=caption, reply_markup=reply_markup)
         return
     if media_type == "audio":
-        await message.answer_audio(input_file, caption=caption, title=result.title)
+        try:
+            await message.answer_audio(input_file, caption=caption, title=result.title, reply_markup=reply_markup)
+        except TelegramAPIError:
+            await message.answer_document(input_file, caption=caption, reply_markup=reply_markup)
         return
     if media_type == "video":
-        await message.answer_video(input_file, caption=caption, supports_streaming=True)
+        try:
+            await message.answer_video(input_file, caption=caption, supports_streaming=True, reply_markup=reply_markup)
+        except TelegramAPIError:
+            await message.answer_document(input_file, caption=caption, reply_markup=reply_markup)
         return
 
     try:
-        await message.answer_document(input_file, caption=caption)
+        await message.answer_document(input_file, caption=caption, reply_markup=reply_markup)
     except TelegramAPIError:
         raise
