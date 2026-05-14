@@ -7,13 +7,14 @@ The bot is built with Python, aiogram v3, SQLite, yt-dlp, Uzbek UI text, admin s
 ## Features
 
 - TikTok, Instagram, YouTube, Facebook, Twitter/X media downloads
-- Music search by song name
+- Snapchat, Likee, Pinterest, Threads, and VK link support through yt-dlp
+- Music search by song name with numbered inline result selection
+- URL video/media download with an audio download button
 - Uzbek language interface
 - Inline keyboard UI
 - Admin panel with statistics and broadcast
 - SQLite database
 - Anti-spam cooldown
-- Conservative file and duration limits
 - Error handling and logs
 - Railway 24/7 worker deployment support
 
@@ -69,17 +70,18 @@ On this Windows project you can also double-click `start.bat` after `.env` is re
 ## Uzbek Usage Notes
 
 - Video yuklash uchun foydalanuvchi havolani botga yuboradi.
-- Musiqa yuklash uchun `Musiqa qidirish` tugmasi bosiladi va qo'shiq nomi yoziladi.
+- Video yuborilgandan keyin `Audiosini yuklash` tugmasi chiqadi.
+- Musiqa qidirish uchun foydalanuvchi qo'shiq nomi yoki matn yozadi.
 - Admin panel uchun `/admin` buyrug'i ishlatiladi.
 
 ## Safe Defaults
 
-- `MAX_FILE_MB=45`
-- `MAX_DURATION_SECONDS=900`
+- `MAX_FILE_MB=0`
+- `MAX_DURATION_SECONDS=0`
 - `COOLDOWN_SECONDS=10`
-- Playlists are disabled.
+- YouTube playlist links are disabled.
 
-These defaults help keep the bot stable on Railway and inside Telegram upload limits.
+`0` means the bot does not apply its own size or duration limit. Telegram, Railway, and the source platform can still reject very large files.
 
 ## Important Notes
 
