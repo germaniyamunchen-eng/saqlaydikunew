@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, FSInputFile, Message
 
 from config import Config
 from database.db import Database
-from keyboards.inline import main_keyboard, music_results_keyboard
+from keyboards.inline import main_keyboard, music_results_keyboard, music_results_text
 from services.cleanup import remove_file
 from services.downloader import download_music, search_music
 from services.recognizer import download_attachment, get_music_attachment, recognize_track
@@ -35,7 +35,7 @@ async def show_music_results(message: Message, state: FSMContext, query: str, co
 
     await state.update_data(music_results=[item.__dict__ for item in results], music_query=query)
     await state.set_state(None)
-    text = intro or "<b>Natijalardan birini tanlang:</b>"
+    text = f"{intro}\n\n{music_results_text(results, page=0)}" if intro else music_results_text(results, page=0)
     await message.answer(text, reply_markup=music_results_keyboard(results, page=0))
 
 
@@ -184,7 +184,10 @@ async def music_page(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer("Natijalar eskirgan", show_alert=True)
         return
     page = int(callback.data.split(":", 1)[1])
-    await callback.message.edit_reply_markup(reply_markup=music_results_keyboard(results, page=page))
+    await callback.message.edit_text(
+        music_results_text(results, page=page),
+        reply_markup=music_results_keyboard(results, page=page),
+    )
     await callback.answer()
 
 
