@@ -24,7 +24,7 @@ HELP_TEXT = (
     "Musiqa topish: qo'shiq nomi, artist, matn, voice, audio yoki video yuboring.\n\n"
     "Qo'llab-quvvatlanadi: TikTok, Instagram, YouTube, Facebook, Twitter/X, Snapchat, Likee, Pinterest, Threads, VK.\n"
     "Bot guruhlarda ham ishlaydi.\n"
-    "Limitlar: 45 MB gacha, 15 daqiqagacha, playlistlar qabul qilinmaydi."
+    "Limitlar o'chirilgan, lekin Telegram/Railway juda katta fayllarni baribir rad qilishi mumkin."
 )
 
 MUSIC_PROMPT = "Qo'shiq nomini yozing. Masalan: <b>Konsta Odamlar nima deydi</b>"
