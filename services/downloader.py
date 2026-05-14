@@ -42,10 +42,6 @@ def _safe_filename(value: str) -> str:
     return value[:80] or "media"
 
 
-def _is_playlist(info: dict[str, Any]) -> bool:
-    return bool(info.get("_type") == "playlist" or info.get("entries"))
-
-
 def _estimate_size(info: dict[str, Any]) -> int:
     size = info.get("filesize") or info.get("filesize_approx")
     if size:
@@ -72,15 +68,12 @@ def _detect_media_type(path: Path, info: dict[str, Any]) -> str:
 
 
 def _check_limits(info: dict[str, Any], config: Config) -> None:
-    if _is_playlist(info):
-        raise DownloadLimitError("Playlists are disabled")
-
     duration = int(info.get("duration") or 0)
-    if duration and duration > config.max_duration_seconds:
+    if config.max_duration_seconds > 0 and duration and duration > config.max_duration_seconds:
         raise DownloadLimitError("Video duration exceeds limit")
 
     size = _estimate_size(info)
-    if size and size > config.max_file_bytes:
+    if config.max_file_bytes > 0 and size and size > config.max_file_bytes:
         raise DownloadLimitError("File size exceeds limit")
 
 
@@ -92,7 +85,6 @@ def _base_options(config: Config, outtmpl: str | None = None) -> dict[str, Any]:
         "restrictfilenames": True,
         "retries": 2,
         "socket_timeout": 25,
-        "extractor_args": {"youtube": {"skip": ["dash", "hls"]}},
     }
     if outtmpl:
         options["outtmpl"] = outtmpl
@@ -112,11 +104,15 @@ def _download_video_sync(url: str, config: Config) -> MediaResult:
         _check_limits(info, config)
 
     options = _base_options(config, output_template)
+    if config.max_file_bytes > 0:
+        format_selector = "best[filesize<={limit}]/best[filesize_approx<={limit}]/best".format(
+            limit=config.max_file_bytes
+        )
+    else:
+        format_selector = "bestvideo+bestaudio/best"
     options.update(
         {
-            "format": "best[filesize<={limit}]/best[filesize_approx<={limit}]/best".format(
-                limit=config.max_file_bytes
-            ),
+            "format": format_selector,
             "merge_output_format": "mp4",
         }
     )
@@ -132,7 +128,7 @@ def _download_video_sync(url: str, config: Config) -> MediaResult:
         raise DownloadError("Downloaded file was not found")
 
     file_size = file_path.stat().st_size
-    if file_size > config.max_file_bytes:
+    if config.max_file_bytes > 0 and file_size > config.max_file_bytes:
         file_path.unlink(missing_ok=True)
         raise DownloadLimitError("Downloaded file exceeds limit")
 
@@ -157,7 +153,7 @@ def _search_music_sync(query: str, config: Config, limit: int = 5) -> list[Searc
     results: list[SearchResult] = []
     for entry in entries:
         duration = int(entry.get("duration") or 0)
-        if duration and duration > config.max_duration_seconds:
+        if config.max_duration_seconds > 0 and duration and duration > config.max_duration_seconds:
             continue
         video_id = entry.get("id")
         url = entry.get("url") or entry.get("webpage_url")
@@ -180,7 +176,7 @@ def _search_music_sync(query: str, config: Config, limit: int = 5) -> list[Searc
     return results
 
 
-def _download_music_sync(url: str, config: Config) -> MediaResult:
+def _download_music_sync(url: str, config: Config, source: str = "YouTube") -> MediaResult:
     request_id = uuid.uuid4().hex
     output_template = str(config.download_dir / f"{request_id}.%(ext)s")
     options = _base_options(config, output_template)
@@ -214,14 +210,14 @@ def _download_music_sync(url: str, config: Config) -> MediaResult:
         file_path = candidates[0]
 
     file_size = file_path.stat().st_size
-    if file_size > config.max_file_bytes:
+    if config.max_file_bytes > 0 and file_size > config.max_file_bytes:
         file_path.unlink(missing_ok=True)
         raise DownloadLimitError("Downloaded audio exceeds limit")
 
     return MediaResult(
         path=file_path,
         title=_safe_filename(info.get("title") or "Music"),
-        source="YouTube",
+        source=source,
         duration=int(info.get("duration") or 0),
         file_size=file_size,
         media_type="audio",
@@ -248,9 +244,9 @@ async def search_music(query: str, config: Config, limit: int = 5) -> list[Searc
         raise DownloadError(str(exc)) from exc
 
 
-async def download_music(url: str, config: Config) -> MediaResult:
+async def download_music(url: str, config: Config, source: str = "YouTube") -> MediaResult:
     try:
-        return await asyncio.to_thread(_download_music_sync, url, config)
+        return await asyncio.to_thread(_download_music_sync, url, config, source)
     except DownloadLimitError:
         raise
     except YtdlpDownloadError as exc:
