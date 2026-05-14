@@ -48,8 +48,8 @@ class Config:
         download_dir = Path(os.getenv("DOWNLOAD_DIR", "downloads"))
 
         cooldown_seconds = int(os.getenv("COOLDOWN_SECONDS", "10"))
-        max_file_mb = int(os.getenv("MAX_FILE_MB", "45"))
-        max_duration_seconds = int(os.getenv("MAX_DURATION_SECONDS", "900"))
+        max_file_mb = int(os.getenv("MAX_FILE_MB", "0"))
+        max_duration_seconds = int(os.getenv("MAX_DURATION_SECONDS", "0"))
 
         database_path.parent.mkdir(parents=True, exist_ok=True)
         download_dir.mkdir(parents=True, exist_ok=True)
