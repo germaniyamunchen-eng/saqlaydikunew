@@ -48,8 +48,9 @@ class Config:
         download_dir = Path(os.getenv("DOWNLOAD_DIR", "downloads"))
 
         cooldown_seconds = int(os.getenv("COOLDOWN_SECONDS", "10"))
-        max_file_mb = int(os.getenv("MAX_FILE_MB", "0"))
-        max_duration_seconds = int(os.getenv("MAX_DURATION_SECONDS", "0"))
+        limits_enabled = os.getenv("ENABLE_MEDIA_LIMITS", "false").strip().lower() in {"1", "true", "yes"}
+        max_file_mb = int(os.getenv("MAX_FILE_MB", "0")) if limits_enabled else 0
+        max_duration_seconds = int(os.getenv("MAX_DURATION_SECONDS", "0")) if limits_enabled else 0
 
         database_path.parent.mkdir(parents=True, exist_ok=True)
         download_dir.mkdir(parents=True, exist_ok=True)
